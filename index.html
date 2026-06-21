@@ -189,7 +189,8 @@
             mask-image:linear-gradient(to top, #000 0%, #000 35%, rgba(0,0,0,.5) 70%, rgba(0,0,0,0) 100%)}
 
   /* ===== floating agent fleet chip (mini Mission Control) ===== */
-  .agent-chip{position:fixed;right:24px;bottom:84px;width:200px;z-index:106;
+  .agent-chip{position:fixed;width:200px;z-index:106;
+    top:auto;left:auto;right:24px;bottom:84px;
     background:rgba(10,10,11,.78);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
     border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;
     font-family:var(--disp);color:var(--ink);
@@ -216,6 +217,16 @@
   .agent-chip .focus-task{transition:opacity .25s ease}
   .agent-chip .focus-task.swap{opacity:0}
   @keyframes ledPulse{0%,100%{box-shadow:0 0 0 0 rgba(57,217,138,.55)}50%{box-shadow:0 0 0 6px rgba(57,217,138,0)}}
+  /* corner-snap variants (data-corner) */
+  .agent-chip[data-corner=br]{right:24px;bottom:84px;left:auto;top:auto}
+  .agent-chip[data-corner=bl]{left:24px;bottom:84px;right:auto;top:auto}
+  .agent-chip[data-corner=tr]{right:24px;top:90px;left:auto;bottom:auto}
+  .agent-chip[data-corner=tl]{left:24px;top:90px;right:auto;bottom:auto}
+  /* drag-handle affordance: header row gets grab cursor */
+  .agent-chip .hdr{cursor:grab;user-select:none}
+  .agent-chip.dragging{transition:none!important;cursor:grabbing;opacity:.94}
+  .agent-chip.dragging .hdr{cursor:grabbing}
+  .agent-chip.snap{transition:left .35s cubic-bezier(.2,.7,.2,1), right .35s cubic-bezier(.2,.7,.2,1), top .35s cubic-bezier(.2,.7,.2,1), bottom .35s cubic-bezier(.2,.7,.2,1)}
   .agent-chip .ftr{font-size:10px;color:var(--ink-dim);letter-spacing:.1em;margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;cursor:pointer;transition:color .2s}
   .agent-chip .ftr:hover{color:var(--ink)}
   .agent-chip{cursor:pointer;transition:transform .55s cubic-bezier(.2,.7,.2,1), opacity .4s ease, width .45s cubic-bezier(.4,.0,.2,1), height .45s cubic-bezier(.4,.0,.2,1), padding .35s ease}
@@ -1205,10 +1216,68 @@
   // auto-open on first load if user opened it in a previous session
   try{
     if(!reduce && localStorage.getItem('govibe.chip.opened')==='1'){
-      // wait for reveal first
       setTimeout(function(){ if(chip.classList.contains('in')) open(); },1200);
     }
   }catch(e){}
+
+  // ===== drag to snap corner =====
+  // restore last corner
+  try{
+    var savedCorner=localStorage.getItem('govibe.chip.corner');
+    if(savedCorner && /^(br|bl|tr|tl)$/.test(savedCorner)) chip.dataset.corner=savedCorner;
+    else chip.dataset.corner='br';
+  }catch(e){ chip.dataset.corner='br'; }
+
+  var hdr=chip.querySelector('.hdr');
+  if(hdr && !matchMedia('(hover: none)').matches){
+    var drag={active:false,startX:0,startY:0,offX:0,offY:0,raf:0};
+    function onDown(e){
+      if(e.button!==undefined && e.button!==0) return;
+      // don't drag from interactive children
+      if(e.target.closest('.close,.row,.feed,a,button')) return;
+      var r=chip.getBoundingClientRect();
+      drag.active=true;
+      drag.startX=e.clientX; drag.startY=e.clientY;
+      drag.offX=e.clientX-r.left; drag.offY=e.clientY-r.top;
+      chip.classList.add('dragging');
+      chip.classList.remove('snap');
+      // switch to top/left positioning while dragging (clears any right/bottom)
+      chip.style.right='auto'; chip.style.bottom='auto';
+      chip.style.left=r.left+'px'; chip.style.top=r.top+'px';
+      hdr.setPointerCapture && hdr.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    }
+    function onMove(e){
+      if(!drag.active) return;
+      var nx=e.clientX-drag.offX, ny=e.clientY-drag.offY;
+      // clamp inside viewport with 12px margin
+      var w=chip.offsetWidth, h=chip.offsetHeight;
+      nx=Math.max(12,Math.min(window.innerWidth-w-12, nx));
+      ny=Math.max(12,Math.min(window.innerHeight-h-12, ny));
+      if(!drag.raf) drag.raf=requestAnimationFrame(function(){
+        chip.style.left=nx+'px'; chip.style.top=ny+'px';
+        drag.raf=0;
+      });
+    }
+    function onUp(e){
+      if(!drag.active) return;
+      drag.active=false;
+      chip.classList.remove('dragging');
+      var r=chip.getBoundingClientRect();
+      var cx=r.left+r.width/2, cy=r.top+r.height/2;
+      var corner=(cy<window.innerHeight/2 ? 't':'b') + (cx<window.innerWidth/2 ? 'l':'r');
+      // snap: clear inline positioning, set data-corner, animate via CSS
+      chip.classList.add('snap');
+      chip.style.left=''; chip.style.top=''; chip.style.right=''; chip.style.bottom='';
+      chip.dataset.corner=corner;
+      try{ localStorage.setItem('govibe.chip.corner', corner); }catch(e){}
+      setTimeout(function(){ chip.classList.remove('snap'); },420);
+    }
+    hdr.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  }
 })();
 </script>
 
