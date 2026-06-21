@@ -208,7 +208,37 @@
   .agent-chip .row.active .st{color:#39d98a}
   .agent-chip .row.idle{color:var(--ink-soft)}
   @keyframes ledPulse{0%,100%{box-shadow:0 0 0 0 rgba(57,217,138,.55)}50%{box-shadow:0 0 0 6px rgba(57,217,138,0)}}
-  .agent-chip .ftr{font-size:10px;color:var(--ink-dim);letter-spacing:.1em;margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between}
+  .agent-chip .ftr{font-size:10px;color:var(--ink-dim);letter-spacing:.1em;margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;cursor:pointer;transition:color .2s}
+  .agent-chip .ftr:hover{color:var(--ink)}
+  .agent-chip{cursor:pointer;transition:transform .55s cubic-bezier(.2,.7,.2,1), opacity .4s ease, width .45s cubic-bezier(.4,.0,.2,1), height .45s cubic-bezier(.4,.0,.2,1), padding .35s ease}
+  .agent-chip .expand-only{display:none}
+  /* expanded popup state */
+  .agent-chip.expanded{width:360px;padding:18px 20px;cursor:default;
+    box-shadow:0 30px 70px -18px rgba(0,0,0,.7), 0 0 0 1px rgba(57,217,138,.08)}
+  .agent-chip.expanded .expand-only{display:block}
+  .agent-chip.expanded .hdr{font-size:11px}
+  .agent-chip.expanded .roster{margin-bottom:14px}
+  .agent-chip.expanded .row{font-size:13px;padding:5px 0}
+  .agent-chip .close{position:absolute;top:10px;right:12px;width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:var(--ink-soft);font-family:var(--disp);font-size:14px;display:none;align-items:center;justify-content:center;cursor:pointer;transition:background .2s,color .2s,transform .2s}
+  .agent-chip.expanded .close{display:inline-flex}
+  .agent-chip .close:hover{background:rgba(255,255,255,.1);color:var(--ink);transform:rotate(90deg)}
+  /* expanded blocks */
+  .agent-chip .focus-task{border-top:1px solid rgba(255,255,255,.06);margin-top:6px;padding-top:12px}
+  .agent-chip .focus-task .lbl{font-size:10px;letter-spacing:.16em;color:var(--ink-dim);text-transform:uppercase;margin-bottom:6px}
+  .agent-chip .focus-task .ttl{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:8px;line-height:1.3}
+  .agent-chip .bar2{height:5px;background:rgba(255,255,255,.06);border-radius:100px;overflow:hidden;position:relative}
+  .agent-chip .bar2 i{display:block;height:100%;background:linear-gradient(90deg,#39d98a,var(--accent));border-radius:100px;width:0;transition:width 1.2s cubic-bezier(.2,.7,.2,1)}
+  .agent-chip.expanded .bar2 i{width:78%}
+  .agent-chip .bar2-meta{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-dim);letter-spacing:.1em;margin-top:6px}
+  .agent-chip .feed{margin-top:12px;display:flex;flex-direction:column;gap:6px;font-size:11.5px;color:var(--ink-soft)}
+  .agent-chip .feed .ev{display:flex;gap:8px;align-items:flex-start;opacity:0;transform:translateY(4px);transition:opacity .5s,transform .5s}
+  .agent-chip .feed .ev.in{opacity:1;transform:none}
+  .agent-chip .feed .ev:nth-child(1){transition-delay:.05s}
+  .agent-chip .feed .ev:nth-child(2){transition-delay:.15s}
+  .agent-chip .feed .ev:nth-child(3){transition-delay:.25s}
+  .agent-chip .feed .ev .t{color:var(--ink-dim);font-size:10px;letter-spacing:.06em;flex:none;min-width:32px}
+  .agent-chip .feed .ev b{color:var(--ink);font-weight:600;letter-spacing:.02em}
+
   @media(max-width:760px){.agent-chip{display:none}}
 
   /* ===== bottom system dock (slim pinned status strip) ===== */
@@ -422,8 +452,9 @@
 <div class="scroll-blur" id="sbTop" data-edge="top"></div>
 <div class="scroll-blur" id="sbBot" data-edge="bottom"></div>
 
-<!-- floating agent fleet chip (mini Mission Control widget) -->
-<div class="agent-chip" id="agentChip" aria-label="GoVibe agent fleet status">
+<!-- floating agent fleet chip (mini Mission Control widget) — click to expand -->
+<div class="agent-chip" id="agentChip" role="button" tabindex="0" aria-expanded="false" aria-label="GoVibe agent fleet status, click to expand">
+  <button type="button" class="close" id="agentChipClose" aria-label="Close mini dashboard">×</button>
   <div class="hdr"><span>Agent Fleet</span><span class="live"><i></i>5 / 5</span></div>
   <div class="roster">
     <div class="row" data-i="0"><span class="led"></span><span class="nm">LYRA</span><span class="st">idle</span></div>
@@ -432,7 +463,22 @@
     <div class="row" data-i="3"><span class="led"></span><span class="nm">GHOST</span><span class="st">idle</span></div>
     <div class="row" data-i="4"><span class="led"></span><span class="nm">VIBE</span><span class="st">idle</span></div>
   </div>
-  <div class="ftr"><span>MCP · ABAC</span><span>H4</span></div>
+
+  <div class="expand-only">
+    <div class="focus-task">
+      <div class="lbl">Current Focus</div>
+      <div class="ttl">A2 · Task Container Pipeline · render Sprint MVP-03 from approved docs</div>
+      <div class="bar2"><i></i></div>
+      <div class="bar2-meta"><span>SPR-MVP-03 · 4 / 5 tasks</span><span>78%</span></div>
+    </div>
+    <div class="feed">
+      <div class="ev"><span class="t">12s</span><span><b>VIBE</b> patched A2 view container width</span></div>
+      <div class="ev"><span class="t">38s</span><span><b>THESEUS</b> verified spec → task drift</span></div>
+      <div class="ev"><span class="t">2m</span><span><b>LYRA</b> approved Plan v0.4 for backlog promotion</span></div>
+    </div>
+  </div>
+
+  <div class="ftr"><span>MCP · ABAC</span><span class="expand-hint">H4 · click ↗</span></div>
 </div>
 
 <!-- bottom system dock — slim live-status strip, auto-tucks on scroll down -->
@@ -1038,33 +1084,69 @@
 })();
 </script>
 
-<!-- floating agent chip: rotate active agent + reveal after hero -->
+<!-- floating agent chip: rotate active agent + reveal after hero + click-to-expand -->
 <script>
 (function(){
   var chip=document.getElementById('agentChip');
   if(!chip) return;
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches){ chip.classList.add('in'); return; }
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce){ chip.classList.add('in'); }
 
+  // rotating active agent
   var rows=chip.querySelectorAll('.row');
   var states=['thinking','writing','reviewing','patching','rendering'];
-  var i=0, t=0;
-  function tick(){
-    rows.forEach(function(r){ r.classList.remove('active'); r.querySelector('.st').textContent='idle'; });
-    var r=rows[i%rows.length];
-    r.classList.add('active');
-    r.querySelector('.st').textContent=states[i%states.length];
-    i++;
-    t=setTimeout(tick, 1800);
+  if(!reduce){
+    var i=0;
+    (function tick(){
+      rows.forEach(function(r){ r.classList.remove('active'); r.querySelector('.st').textContent='idle'; });
+      var r=rows[i%rows.length];
+      r.classList.add('active');
+      r.querySelector('.st').textContent=states[i%states.length];
+      i++; setTimeout(tick, 1800);
+    })();
   }
-  tick();
 
-  // reveal after the user has scrolled past the hero
-  var hero=document.querySelector('.hero2');
-  var threshold=(hero?hero.offsetHeight:600)*0.85;
-  function onScroll(){
-    if(window.scrollY>threshold){ chip.classList.add('in'); window.removeEventListener('scroll',onScroll); }
+  // reveal chip after the user scrolls past the hero
+  if(!reduce){
+    var hero=document.querySelector('.hero2');
+    var threshold=(hero?hero.offsetHeight:600)*0.85;
+    function onScroll(){
+      if(window.scrollY>threshold){ chip.classList.add('in'); window.removeEventListener('scroll',onScroll); }
+    }
+    window.addEventListener('scroll',onScroll,{passive:true});
   }
-  window.addEventListener('scroll',onScroll,{passive:true});
+
+  // expand / collapse
+  var closeBtn=document.getElementById('agentChipClose');
+  var feedEvents=chip.querySelectorAll('.feed .ev');
+  function open(){
+    if(chip.classList.contains('expanded')) return;
+    chip.classList.add('expanded');
+    chip.setAttribute('aria-expanded','true');
+    // stagger-in the activity feed
+    setTimeout(function(){ feedEvents.forEach(function(ev){ ev.classList.add('in'); }); }, 200);
+  }
+  function close(){
+    if(!chip.classList.contains('expanded')) return;
+    chip.classList.remove('expanded');
+    chip.setAttribute('aria-expanded','false');
+    feedEvents.forEach(function(ev){ ev.classList.remove('in'); });
+  }
+  chip.addEventListener('click',function(e){
+    if(chip.classList.contains('expanded')) return; // expanded: clicks inside don't toggle
+    if(e.target.closest('.close')) return;
+    open();
+  });
+  chip.addEventListener('keydown',function(e){
+    if(chip.classList.contains('expanded')) return;
+    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); }
+  });
+  if(closeBtn) closeBtn.addEventListener('click',function(e){ e.stopPropagation(); close(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
+  document.addEventListener('click',function(e){
+    if(!chip.classList.contains('expanded')) return;
+    if(!chip.contains(e.target)) close();
+  });
 })();
 </script>
 
